@@ -1,0 +1,193 @@
+.App {
+  text-align: center;
+  background-color: #222;
+  min-height: 100vh;
+  color: white;
+  font-family: 'Courier New', monospace;
+}
+
+.App-header {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.App-header h1 {
+  margin: 0 0 30px 0;
+  font-size: 2.5rem;
+  color: #00ff00;
+  text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  letter-spacing: 2px;
+}
+
+.room-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+  align-items: center;
+}
+
+.room-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.create-room-btn, .join-room-btn {
+  background: linear-gradient(45deg, #00ff00, #00cc00);
+  border: none;
+  color: black;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.create-room-btn:hover, .join-room-btn:hover {
+  background: linear-gradient(45deg, #00cc00, #009900);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.room-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #00ff00;
+  color: white;
+  padding: 10px 15px;
+  font-size: 16px;
+  border-radius: 5px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  letter-spacing: 2px;
+  width: 120px;
+}
+
+.room-input:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.room-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+}
+
+.room-info {
+  margin: 20px 0;
+  padding: 15px 25px;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.room-info strong {
+  color: #00ff00;
+  font-size: 24px;
+  letter-spacing: 3px;
+}
+
+.game-status {
+  margin: 20px 0;
+  font-size: 18px;
+  color: #00ff00;
+  min-height: 25px;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.game-container {
+  margin: 20px 0;
+}
+
+.game-board {
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.controls-info {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #888;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 20px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.ball {
+  transition: none;
+  z-index: 10;
+}
+
+.paddle {
+  transition: none;
+  z-index: 5;
+}
+
+.player-paddle {
+  border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.opponent-paddle {
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.score-board {
+  user-select: none;
+}
+
+.game-over-overlay {
+  z-index: 100;
+  backdrop-filter: blur(5px);
+}
+
+.waiting-overlay {
+  z-index: 100;
+  backdrop-filter: blur(3px);
+}
+
+/* Responsive design */
+@media (max-width: 900px) {
+  .game-board {
+    transform: scale(0.8);
+    transform-origin: center;
+  }
+  
+  .score-board {
+    width: 640px !important;
+  }
+  
+  .App-header h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-board {
+    transform: scale(0.6);
+  }
+  
+  .score-board {
+    width: 480px !important;
+  }
+  
+  .room-controls {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .room-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
