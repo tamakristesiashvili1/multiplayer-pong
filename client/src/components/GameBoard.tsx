@@ -1,6 +1,4 @@
-
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GameState } from '../types/game.types';
 import { Ball } from './Ball';
 import { Paddle } from './Paddle';
@@ -13,6 +11,40 @@ interface GameBoardProps {
 
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide }) => {
   const { gameWidth, gameHeight, ball, paddles, paddleWidth, paddleHeight, ballSize } = gameState;
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (typeof event.key !== 'string') return;
+
+      const key = event.key.toLowerCase();
+
+      if (key === 'w') {
+        console.log('Move up');
+      } else if (key === 's') {
+        console.log('Move down');
+      } else if (key === 'r' && gameState.gameOver) {
+        console.log('Restart game');
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (typeof event.key !== 'string') return;
+
+      const key = event.key.toLowerCase();
+
+      if (key === 'w' || key === 's') {
+        console.log('Stop moving');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [gameState.gameOver]);
 
   return (
     <div className="game-container">
