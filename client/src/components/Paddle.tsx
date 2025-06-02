@@ -11,15 +11,19 @@ interface PaddleProps {
 export const Paddle: React.FC<PaddleProps> = ({ x, y, width, height, isPlayer }) => {
   return (
     <div
-      className={`paddle ${isPlayer ? 'player-paddle' : 'opponent-paddle'}`}
       style={{
         position: 'absolute',
-        left: `${x}px`,
-        top: `${y}px`,
-        width: `${width}px`,
-        height: `${height}px`,
-        backgroundColor: isPlayer ? '#4CAF50' : 'white',
-        borderRadius: '2px'
+        left: x,
+        top: y,
+        width: width,
+        height: height,
+        borderRadius: 8,
+        backgroundColor: isPlayer ? '#00ffcc' : '#ffffff',
+        boxShadow: isPlayer
+          ? '0 0 12px 3px #00ffcc, inset 0 0 8px 1px #00bba6'
+          : '0 0 10px 2px #aaaaaa, inset 0 0 5px 1px #dddddd',
+        transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
+        userSelect: 'none',
       }}
     />
   );

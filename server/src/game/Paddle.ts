@@ -1,5 +1,4 @@
-import { PlayerInput } from '../types/game.types';
-import { Game } from '../game/Game';
+import { PlayerInput, GAME_CONFIG } from '../types/game.types';
 
 export class Paddle {
   private y: number;
@@ -14,10 +13,10 @@ export class Paddle {
   public setDirection(direction: PlayerInput['direction']): void {
     switch (direction) {
       case 'up':
-        this.velocity = -Game['PADDLE_SPEED'];
+        this.velocity = -GAME_CONFIG.PADDLE_SPEED;
         break;
       case 'down':
-        this.velocity = Game['PADDLE_SPEED'];
+        this.velocity = GAME_CONFIG.PADDLE_SPEED;
         break;
       case 'stop':
         this.velocity = 0;

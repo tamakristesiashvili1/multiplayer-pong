@@ -1,14 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Multiplayer Pong Game" />
-    <title>Multiplayer Pong</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multiplayer Pong</title>
+  <style>
+    body {
+      background: #121212;
+      color: #eee;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 0;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+    button {
+      background: #222;
+      color: #eee;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background: #444;
+    }
+    #roomInfo {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #gameCanvas {
+      background: #000;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+    }
+    #logs {
+      margin-top: 20px;
+      max-height: 150px;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 800px;
+      background: #222;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      border-radius: 5px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Multiplayer Pong</h1>
+  
+  <div id="controls">
+    <button id="createRoomBtn">Create Room</button>
+    <input type="text" id="joinRoomId" placeholder="Room ID to join" maxlength="6" style="padding: 8px; font-size: 16px; width: 120px;" />
+    <button id="joinRoomBtn">Join Room</button>
+  </div>
+
+  <div id="roomInfo">Not connected to any room</div>
+  
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+  <div id="logs"></div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('http://localhost:3001');
+    const logs = document.getElementById('logs');
+    const roomInfo = document.getElementById('roomInfo');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentRoom = null;
+    let playerSide = null;
+    let gameState = null;
+
+    function log(message) {
+      const p = document.createElement('p');
+      p.textContent = message;
+      logs.appendChild(p);
+      logs.scrollTop = logs.scrollHeight;
+      console.log(message);
+    }
+
+    // Clear and draw game objects
+    function drawGame(state) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw ball
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(state.ball.x, state.ball.y, state.ballSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw left paddle
+      ctx.fillRect(0, state.paddles.left.y, state.paddleWidth, state.paddleHeight);
+      // Draw right paddle
+      ctx.fillRect(canvas.width - state.paddleWidth, state.paddles.right.y, state.paddleWidth, state.paddleHeight);
+
+      // Draw scores
+      ctx.font = '30px Arial';
+      ctx.fillText(state.paddles.left.score, canvas.width * 0.25, 50);
+      ctx.fillText(state.paddles.right.score, canvas.width * 0.75, 50);
+
+      // Draw middle line
+      ctx.strokeStyle = '#555';
+      ctx.setLineDash([10, 15]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Button handlers
+    document.getElementById('createRoomBtn').onclick = () => {
+      socket.emit('createRoom');
+      log('Create room button clicked');
+    };
+
+    document.getElementById('joinRoomBtn').onclick = () => {
+      const roomId = document.getElementById('joinRoomId').value.trim().toUpperCase();
+      if (roomId.length !== 6) {
+        alert('Room ID must be 6 characters');
+        return;
+      }
+      socket.emit('joinRoom', roomId);
+      log(`Trying to join room: ${roomId}`);
+    };
+
+    // Socket event handlers
+    socket.on('connect', () => {
+      log(`Connected to server with ID: ${socket.id}`);
+    });
+
+    socket.on('roomCreated', (roomId) => {
+      currentRoom = roomId;
+      roomInfo.textContent = `Room created: ${roomId}. You are the left player. Waiting for opponent...`;
+      log(`Room created: ${roomId}`);
+    });
+
+    socket.on('playerJoined', (side) => {
+      playerSide = side;
+      roomInfo.textContent = `Joined room: ${currentRoom || 'unknown'}. You are the ${side} player.`;
+      log(`You joined as: ${side}`);
+    });
+
+    socket.on('roomFull', () => {
+      alert('Room is full, cannot join.');
+      log('Failed to join room: room full');
+    });
+
+    socket.on('gameStarted', () => {
+      log('Game started!');
+    });
+
+    socket.on('gameStateUpdate', (state) => {
+      gameState = state;
+      drawGame(state);
+      log(`Game state updated: ${JSON.stringify(state)}`);
+    });
+
+    socket.on('gameEnded', (winner) => {
+      log(`Game ended! Winner: ${winner}`);
+      alert(`Game over! Winner: ${winner}`);
+    });
+
+    socket.on('playerDisconnected', () => {
+      alert('Opponent disconnected. Waiting for a new player...');
+      log('Opponent disconnected.');
+      roomInfo.textContent = `Opponent disconnected. Waiting...`;
+    });
+
+    socket.on('disconnect', () => {
+      log('Disconnected from server.');
+      currentRoom = null;
+      playerSide = null;
+      roomInfo.textContent = 'Disconnected from server.';
+    });
+  </script>
+</body>
 </html>

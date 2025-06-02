@@ -17,71 +17,77 @@ function App() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('gameStateUpdate', (newGameState: GameState) => {
+    const onGameStateUpdate = (newGameState: GameState) => {
       setGameState(newGameState);
-    });
-
-    socket.on('playerJoined', (side: 'left' | 'right') => {
+    };
+    const onPlayerJoined = (side: 'left' | 'right') => {
       setPlayerSide(side);
       setGameStatus(`You are the ${side} player. Waiting for opponent...`);
-    });
-
-    socket.on('gameStarted', () => {
+    };
+    const onGameStarted = () => {
       setGameStatus('Game started! Use W/S or Arrow Keys to move your paddle.');
-    });
-
-    socket.on('gameEnded', (winner: 'left' | 'right') => {
+    };
+    const onGameEnded = (winner: 'left' | 'right') => {
       const isWinner = winner === playerSide;
       setGameStatus(`Game Over! ${isWinner ? 'You win!' : 'You lose!'} Press R to restart.`);
-    });
-
-    socket.on('roomFull', () => {
+    };
+    const onRoomFull = () => {
       setGameStatus('Room is full! Try a different room.');
-    });
-
-    socket.on('playerDisconnected', () => {
+    };
+    const onPlayerDisconnected = () => {
       setGameStatus('Other player disconnected. Waiting for new player...');
-    });
-
-    socket.on('roomCreated', (newRoomId: string) => {
+    };
+    const onRoomCreated = (newRoomId: string) => {
       setCurrentRoomId(newRoomId);
       setGameStatus(`Room ${newRoomId} created! Share this room ID with your friend.`);
-    });
+    };
+
+    socket.on('gameStateUpdate', onGameStateUpdate);
+    socket.on('playerJoined', onPlayerJoined);
+    socket.on('gameStarted', onGameStarted);
+    socket.on('gameEnded', onGameEnded);
+    socket.on('roomFull', onRoomFull);
+    socket.on('playerDisconnected', onPlayerDisconnected);
+    socket.on('roomCreated', onRoomCreated);
 
     return () => {
-      socket.off('gameStateUpdate');
-      socket.off('playerJoined');
-      socket.off('gameStarted');
-      socket.off('gameEnded');
-      socket.off('roomFull');
-      socket.off('playerDisconnected');
-      socket.off('roomCreated');
+      socket.off('gameStateUpdate', onGameStateUpdate);
+      socket.off('playerJoined', onPlayerJoined);
+      socket.off('gameStarted', onGameStarted);
+      socket.off('gameEnded', onGameEnded);
+      socket.off('roomFull', onRoomFull);
+      socket.off('playerDisconnected', onPlayerDisconnected);
+      socket.off('roomCreated', onRoomCreated);
     };
   }, [socket, playerSide]);
 
-  // Handle keyboard input
-  const sendPlayerInput = useCallback((direction: 'up' | 'down' | 'stop') => {
-    if (socket && gameState?.gameStarted && !gameState?.gameOver) {
-      const input: PlayerInput = { direction };
-      socket.emit('playerInput', input);
-    }
-  }, [socket, gameState]);
+  // Send player input to server
+  const sendPlayerInput = useCallback(
+    (direction: 'up' | 'down' | 'stop') => {
+      if (socket && gameState?.gameStarted && !gameState.gameOver) {
+        const input: PlayerInput = { direction };
+        socket.emit('playerInput', input);
+      }
+    },
+    [socket, gameState]
+  );
 
+  // Keyboard event handlers for paddle movement and restart
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
-      
-      if (keysPressed.has(key)) return; // Prevent key repeat
-      
+      if (keysPressed.has(key)) return; // prevent repeats
       setKeysPressed(prev => new Set(prev).add(key));
 
-      if ((key === 'w' || key === 'arrowup') && playerSide === 'left') {
+      if (
+        ((key === 'w' || key === 'arrowup') && playerSide === 'left') ||
+        ((key === 'arrowup') && playerSide === 'right')
+      ) {
         sendPlayerInput('up');
-      } else if ((key === 's' || key === 'arrowdown') && playerSide === 'left') {
-        sendPlayerInput('down');
-      } else if ((key === 'arrowup') && playerSide === 'right') {
-        sendPlayerInput('up');
-      } else if ((key === 'arrowdown') && playerSide === 'right') {
+      } else if (
+        ((key === 's' || key === 'arrowdown') && playerSide === 'left') ||
+        ((key === 'arrowdown') && playerSide === 'right')
+      ) {
         sendPlayerInput('down');
       } else if (key === 'r' && gameState?.gameOver) {
         socket?.emit('restartGame');
@@ -96,31 +102,32 @@ function App() {
         return newSet;
       });
 
-      if (((key === 'w' || key === 's') && playerSide === 'left') ||
-          ((key === 'arrowup' || key === 'arrowdown') && playerSide === 'right')) {
+      if (
+        (((key === 'w' || key === 's') && playerSide === 'left') ||
+        ((key === 'arrowup' || key === 'arrowdown') && playerSide === 'right'))
+      ) {
         sendPlayerInput('stop');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [playerSide, sendPlayerInput, gameState, socket, keysPressed]);
+  }, [keysPressed, playerSide, sendPlayerInput, gameState, socket]);
 
+  // Create and join room helpers
   const createRoom = () => {
-    if (socket) {
-      socket.emit('createRoom');
-    }
+    if (socket) socket.emit('createRoom');
   };
 
   const joinRoom = () => {
     if (socket && roomId.trim()) {
-      setCurrentRoomId(roomId.trim());
-      socket.emit('joinRoom', roomId.trim());
+      const trimmed = roomId.trim().toUpperCase();
+      setCurrentRoomId(trimmed);
+      socket.emit('joinRoom', trimmed);
       setGameStatus('Joining room...');
     }
   };
@@ -129,7 +136,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Multiplayer Pong</h1>
-        
+
         {!gameState && (
           <div className="room-controls">
             <div className="room-section">
@@ -137,7 +144,7 @@ function App() {
                 Create New Room
               </button>
             </div>
-            
+
             <div className="room-section">
               <input
                 type="text"
@@ -156,7 +163,9 @@ function App() {
 
         {currentRoomId && (
           <div className="room-info">
-            <p>Room ID: <strong>{currentRoomId}</strong></p>
+            <p>
+              Room ID: <strong>{currentRoomId}</strong>
+            </p>
           </div>
         )}
 
@@ -165,16 +174,17 @@ function App() {
         </div>
 
         {gameState && (
-          <>
-            <GameBoard gameState={gameState} playerSide={playerSide} />
-            <div className="controls-info">
-              <p>
-                {playerSide === 'left' ? 'Use W/S keys to move' : 'Use Arrow Keys to move'}
-                {gameState.gameOver && ' | Press R to restart'}
-              </p>
-            </div>
-          </>
-        )}
+  <>
+    <GameBoard gameState={gameState} playerSide={playerSide} socket={socket} />
+    <div className="controls-info">
+      <p>
+        {playerSide === 'left' ? 'Use W/S keys to move' : 'Use Arrow Keys to move'}
+        {gameState.gameOver && ' | Press R to restart'}
+      </p>
+    </div>
+  </>
+)}
+
       </header>
     </div>
   );

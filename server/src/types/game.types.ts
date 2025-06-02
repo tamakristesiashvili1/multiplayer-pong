@@ -1,71 +1,59 @@
-// Shared types for both client and server
-export interface Position {
-  x: number;
-  y: number;
-}
-
-export interface Velocity {
-  x: number;
-  y: number;
-}
-
-export interface PaddleState {
-  id: string;
-  position: Position;
-  width: number;
-  height: number;
-  player: 'left' | 'right';
-}
-
-export interface BallState {
-  position: Position;
-  velocity: Velocity;
-  radius: number;
-}
-
 export interface GameState {
-  id: string;
-  players: {
-    left: string | null;
-    right: string | null;
+  ball: {
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
   };
   paddles: {
-    left: PaddleState;
-    right: PaddleState;
+    left: {
+      y: number;
+      score: number;
+    };
+    right: {
+      y: number;
+      score: number;
+    };
   };
-  ball: BallState;
-  score: {
-    left: number;
-    right: number;
-  };
-  gameArea: {
-    width: number;
-    height: number;
-  };
-  isPlaying: boolean;
-  winner: 'left' | 'right' | null;
+  gameWidth: number;
+  gameHeight: number;
+  paddleHeight: number;
+  paddleWidth: number;
+  ballSize: number;
+  gameStarted: boolean;
+  gameOver: boolean;
+  winner?: 'left' | 'right';
 }
 
 export interface PlayerInput {
-  playerId: string;
   direction: 'up' | 'down' | 'stop';
 }
 
-// Socket event types
+export interface GameRoom {
+  id: string;
+  players: {
+    left?: string;
+    right?: string;
+  };
+  gameState: GameState;
+  lastUpdate: number;
+}
+
 export interface ServerToClientEvents {
-  'game-state': (gameState: GameState) => void;
-  'player-joined': (playerId: string, position: 'left' | 'right') => void;
-  'player-left': (playerId: string) => void;
-  'game-started': () => void;
-  'game-ended': (winner: 'left' | 'right') => void;
-  'waiting-for-player': () => void;
-  'room-full': () => void;
+  gameStateUpdate: (gameState: GameState) => void;
+  playerJoined: (side: 'left' | 'right') => void;
+  gameStarted: () => void;
+  gameEnded: (winner: 'left' | 'right') => void;
+  roomFull: () => void;
+  playerDisconnected: () => void;
+  roomCreated: (roomId: string) => void;
 }
 
 export interface ClientToServerEvents {
-  'join-game': () => void;
-  'player-input': (input: PlayerInput) => void;
-  'restart-game': () => void;
+  joinRoom: (roomId: string) => void;
+  createRoom: () => void;
+  playerInput: (input: PlayerInput) => void;
+  restartGame: () => void;
 }
 
 export const GAME_CONFIG = {
@@ -73,9 +61,7 @@ export const GAME_CONFIG = {
   GAME_HEIGHT: 400,
   PADDLE_WIDTH: 10,
   PADDLE_HEIGHT: 80,
-  PADDLE_SPEED: 5,
-  BALL_RADIUS: 8,
-  BALL_SPEED: 4,
-  WINNING_SCORE: 5,
-  TICK_RATE: 60, // FPS
+  BALL_RADIUS: 5,
+  BALL_SPEED: 5,
+  PADDLE_SPEED: 8,
 };

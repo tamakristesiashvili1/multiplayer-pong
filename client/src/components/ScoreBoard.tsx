@@ -7,31 +7,16 @@ interface ScoreBoardProps {
 }
 
 export const ScoreBoard: React.FC<ScoreBoardProps> = ({ leftScore, rightScore, playerSide }) => {
+  const isLeft = playerSide === 'left';
+  const isRight = playerSide === 'right';
+
   return (
-    <div className="scoreboard" style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '300px',
-      margin: '0 auto 20px auto',
-      color: 'white',
-      fontSize: '24px',
-      fontWeight: 'bold'
-    }}>
-      <div className={`score ${playerSide === 'left' ? 'player-score' : ''}`}>
-        <span style={{ opacity: playerSide === 'left' ? 1 : 0.7 }}>
-          {playerSide === 'left' ? 'YOU' : 'OPPONENT'}
-        </span>
-        <div style={{ fontSize: '32px', marginTop: '5px' }}>{leftScore}</div>
+    <div className="scoreboard">
+      <div className={`score ${isLeft ? 'highlight' : ''}`}>
+        {isLeft ? 'You' : 'Left'}: {leftScore}
       </div>
-      
-      <div style={{ fontSize: '18px', opacity: 0.5 }}>VS</div>
-      
-      <div className={`score ${playerSide === 'right' ? 'player-score' : ''}`}>
-        <span style={{ opacity: playerSide === 'right' ? 1 : 0.7 }}>
-          {playerSide === 'right' ? 'YOU' : 'OPPONENT'}
-        </span>
-        <div style={{ fontSize: '32px', marginTop: '5px' }}>{rightScore}</div>
+      <div className={`score ${isRight ? 'highlight' : ''}`}>
+        {isRight ? 'You' : 'Right'}: {rightScore}
       </div>
     </div>
   );
