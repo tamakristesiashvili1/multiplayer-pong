@@ -8,45 +8,77 @@ import { Socket } from 'socket.io-client';
 interface GameBoardProps {
   gameState: GameState;
   playerSide: 'left' | 'right' | null;
-  socket: Socket | null;  // socket prop added here, nullable for safety
+  socket: Socket | null;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, socket }) => {
   const { gameWidth, gameHeight, ball, paddles, paddleWidth, paddleHeight, ballSize } = gameState;
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !playerSide) {
+      console.log('Socket or playerSide not available:', { socket: !!socket, playerSide });
+      return;
+    }
+
+    console.log('Setting up keyboard listeners for player:', playerSide);
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) return;
       if (typeof event.key !== 'string') return;
-      const key = event.key.toLowerCase();
 
-      if (key === 'w') {
+      const key = event.key.toLowerCase();
+      console.log('Key pressed:', key);
+
+      // List of keys that control paddle movement
+      if (key === 'w' || key === 'arrowup') {
+        event.preventDefault();
+        console.log('Sending UP command to server');
         socket.emit('playerInput', { direction: 'up' });
-      } else if (key === 's') {
+      } else if (key === 's' || key === 'arrowdown') {
+        event.preventDefault();
+        console.log('Sending DOWN command to server');
         socket.emit('playerInput', { direction: 'down' });
       } else if (key === 'r' && gameState.gameOver) {
+        console.log('Sending restart command to server');
         socket.emit('restartGame');
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (typeof event.key !== 'string') return;
+
       const key = event.key.toLowerCase();
 
-      if (key === 'w' || key === 's') {
+      if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown') {
+        event.preventDefault();
+        console.log('Key released:', key, 'Sending stop command');
+        // Enable this if your server handles stop events
         socket.emit('playerStop');
       }
     };
 
+    // Add event listeners
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
+    // Cleanup function
     return () => {
+      console.log('Cleaning up keyboard listeners');
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [socket, gameState.gameOver]);
+  }, [socket, playerSide, gameState.gameOver]);
+
+  // Debug: Log when gameState changes
+  useEffect(() => {
+    console.log('GameState updated:', {
+      gameStarted: gameState.gameStarted,
+      gameOver: gameState.gameOver,
+      leftPaddleY: paddles.left.y,
+      rightPaddleY: paddles.right.y,
+      playerSide
+    });
+  }, [gameState, playerSide]);
 
   return (
     <div className="game-container" style={{ maxWidth: gameWidth + 40, margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
@@ -55,6 +87,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
         rightScore={paddles.right.score}
         playerSide={playerSide}
       />
+      
+      {/* Debug info */}
+      <div style={{ 
+        color: 'white', 
+        fontSize: '12px', 
+        textAlign: 'center', 
+        marginBottom: '10px',
+        background: '#333',
+        padding: '5px',
+        borderRadius: '4px'
+      }}>
+        Player: {playerSide || 'None'} | Socket: {socket ? 'Connected' : 'Disconnected'} | 
+        Game Started: {gameState.gameStarted ? 'Yes' : 'No'}
+      </div>
       
       <div 
         className="game-board"
@@ -70,6 +116,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
           overflow: 'hidden',
           userSelect: 'none',
         }}
+        tabIndex={0} // Make div focusable for keyboard events
+        onFocus={() => console.log('Game board focused')}
+        onBlur={() => console.log('Game board lost focus')}
       >
         <div 
           className="center-line"
@@ -129,6 +178,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
               padding: '0 20px',
               textAlign: 'center',
             }}
+            role="alert"
+            aria-live="assertive"
           >
             <div>Game Over!</div>
             <div style={{ fontSize: '20px', marginTop: '12px' }}>
@@ -149,7 +200,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
               left: 0,
               width: '100%',
               height: '100%',
-              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              backgroundColor: 'rgba(198, 34, 34, 0.85)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -162,6 +213,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
             Waiting for players...
           </div>
         )}
+      </div>
+
+      {/* Controls help */}
+      <div style={{ 
+        color: 'white', 
+        fontSize: '14px', 
+        textAlign: 'center', 
+        marginTop: '10px',
+        background: '#333',
+        padding: '8px',
+        borderRadius: '4px'
+      }}>
+        Controls: W/↑ (Up) | S/↓ (Down) | R (Restart when game over)
       </div>
     </div>
   );

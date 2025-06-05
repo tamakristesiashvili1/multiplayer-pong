@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ClientToServerEvents, ServerToClientEvents } from '../types/game.types';
 
-const SERVER_URL = 'http://localhost:3000';
+// Fixed: Changed port from 3000 to 3001 to match server
+const SERVER_URL = 'http://localhost:3001';
 
 export const useSocket = (): Socket<ServerToClientEvents, ClientToServerEvents> | null => {
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);

@@ -17,14 +17,15 @@ export const Paddle: React.FC<PaddleProps> = ({ x, y, width, height, isPlayer })
         top: y,
         width: width,
         height: height,
-        borderRadius: 8,
-        backgroundColor: isPlayer ? '#00ffcc' : '#ffffff',
+        borderRadius: 4,
+        backgroundColor: isPlayer ? '#ff0000' : '#880000',
         boxShadow: isPlayer
-          ? '0 0 12px 3px #00ffcc, inset 0 0 8px 1px #00bba6'
-          : '0 0 10px 2px #aaaaaa, inset 0 0 5px 1px #dddddd',
-        transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
-        userSelect: 'none',
+          ? '0 0 12px 3px #ff0000, inset 0 0 8px 1px #990000'
+          : '0 0 8px 2px #440000, inset 0 0 5px 1px #330000',
+        border: '1px solid #ff4444',
+        transition: 'background-color 0.2s ease',
       }}
     />
   );
 };
+

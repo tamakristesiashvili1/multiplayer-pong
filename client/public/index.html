@@ -46,18 +46,10 @@
       display: block;
       margin: 0 auto;
     }
-    #logs {
-      margin-top: 20px;
-      max-height: 150px;
-      overflow-y: auto;
-      width: 100%;
-      max-width: 800px;
-      background: #222;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 12px;
-      border-radius: 5px;
-      color: #ccc;
+    #keyboardHelp {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #aaa;
     }
   </style>
 </head>
@@ -71,15 +63,13 @@
   </div>
 
   <div id="roomInfo">Not connected to any room</div>
+  <div id="keyboardHelp">Left Player: W/S keys | Right Player: Arrow Up/Down | Press R to restart when game over</div>
   
   <canvas id="gameCanvas" width="800" height="400"></canvas>
-
-  <div id="logs"></div>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
     const socket = io('http://localhost:3001');
-    const logs = document.getElementById('logs');
     const roomInfo = document.getElementById('roomInfo');
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -87,14 +77,69 @@
     let currentRoom = null;
     let playerSide = null;
     let gameState = null;
+    let keysPressed = new Set();
 
-    function log(message) {
-      const p = document.createElement('p');
-      p.textContent = message;
-      logs.appendChild(p);
-      logs.scrollTop = logs.scrollHeight;
-      console.log(message);
+    // Send player input to server
+    function sendPlayerInput(direction) {
+      if (socket && gameState && gameState.gameStarted && !gameState.gameOver) {
+        const input = { direction };
+        socket.emit('playerInput', input);
+      }
     }
+
+    // Keyboard event handlers - FIXED: Proper WASD and Arrow key handling
+    document.addEventListener('keydown', (event) => {
+      const key = event.key.toLowerCase();
+      
+      // Prevent repeated calls on holding key
+      if (keysPressed.has(key)) return;
+      keysPressed.add(key);
+
+      // Left player controls: W/S
+      if (playerSide === 'left') {
+        if (key === 'w') {
+          sendPlayerInput('up');
+          return;
+        }
+        if (key === 's') {
+          sendPlayerInput('down');
+          return;
+        }
+      }
+
+      // Right player controls: Arrow Up/Down
+      if (playerSide === 'right') {
+        if (event.key === 'ArrowUp') {
+          sendPlayerInput('up');
+          return;
+        }
+        if (event.key === 'ArrowDown') {
+          sendPlayerInput('down');
+          return;
+        }
+      }
+
+      // Restart game on 'r' if game over
+      if (key === 'r' && gameState && gameState.gameOver) {
+        socket.emit('restartGame');
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      const key = event.key.toLowerCase();
+      keysPressed.delete(key);
+
+      // Left player stops moving when W or S released
+      if (playerSide === 'left' && (key === 'w' || key === 's')) {
+        sendPlayerInput('stop');
+        return;
+      }
+
+      // Right player stops moving when arrow keys released
+      if (playerSide === 'right' && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        sendPlayerInput('stop');
+      }
+    });
 
     // Clear and draw game objects
     function drawGame(state) {
@@ -129,7 +174,6 @@
     // Button handlers
     document.getElementById('createRoomBtn').onclick = () => {
       socket.emit('createRoom');
-      log('Create room button clicked');
     };
 
     document.getElementById('joinRoomBtn').onclick = () => {
@@ -139,58 +183,55 @@
         return;
       }
       socket.emit('joinRoom', roomId);
-      log(`Trying to join room: ${roomId}`);
     };
 
     // Socket event handlers
     socket.on('connect', () => {
-      log(`Connected to server with ID: ${socket.id}`);
+      console.log(`Connected to server with ID: ${socket.id}`);
     });
 
     socket.on('roomCreated', (roomId) => {
       currentRoom = roomId;
       roomInfo.textContent = `Room created: ${roomId}. You are the left player. Waiting for opponent...`;
-      log(`Room created: ${roomId}`);
     });
 
     socket.on('playerJoined', (side) => {
       playerSide = side;
       roomInfo.textContent = `Joined room: ${currentRoom || 'unknown'}. You are the ${side} player.`;
-      log(`You joined as: ${side}`);
     });
 
     socket.on('roomFull', () => {
       alert('Room is full, cannot join.');
-      log('Failed to join room: room full');
     });
 
     socket.on('gameStarted', () => {
-      log('Game started!');
+      roomInfo.textContent += ' | Game Started!';
     });
 
     socket.on('gameStateUpdate', (state) => {
       gameState = state;
       drawGame(state);
-      log(`Game state updated: ${JSON.stringify(state)}`);
     });
 
     socket.on('gameEnded', (winner) => {
-      log(`Game ended! Winner: ${winner}`);
-      alert(`Game over! Winner: ${winner}`);
+      alert(`Game over! Winner: ${winner}. Press R to restart.`);
     });
 
     socket.on('playerDisconnected', () => {
       alert('Opponent disconnected. Waiting for a new player...');
-      log('Opponent disconnected.');
       roomInfo.textContent = `Opponent disconnected. Waiting...`;
     });
 
     socket.on('disconnect', () => {
-      log('Disconnected from server.');
       currentRoom = null;
       playerSide = null;
+      gameState = null;
       roomInfo.textContent = 'Disconnected from server.';
     });
+
+    // Focus canvas for keyboard events
+    canvas.setAttribute('tabindex', '0');
+    canvas.focus();
   </script>
 </body>
 </html>

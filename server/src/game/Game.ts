@@ -7,6 +7,7 @@ export class Game {
   public static readonly PADDLE_WIDTH = 10;
   public static readonly PADDLE_SPEED = 8;
   public static readonly BALL_SPEED = 5;
+  public static readonly BALL_SIZE = 10;
   public static readonly WINNING_SCORE = 5;
   private static readonly BALL_SPEED_INCREMENT = 0.3;
 
@@ -39,12 +40,18 @@ export class Game {
   }
 
   static updatePaddle(gameState: GameState, side: 'left' | 'right', input: PlayerInput): void {
+    console.log(`Updating paddle ${side} with input:`, input);
+    
     const paddle = gameState.paddles[side];
+    const oldY = paddle.y;
+    
     if (input.direction === 'up') {
       paddle.y = Math.max(0, paddle.y - this.PADDLE_SPEED);
     } else if (input.direction === 'down') {
       paddle.y = Math.min(gameState.gameHeight - gameState.paddleHeight, paddle.y + this.PADDLE_SPEED);
     }
+    
+    console.log(`Paddle ${side} moved from ${oldY} to ${paddle.y}`);
   }
 
   static updateBall(gameState: GameState): boolean {
@@ -60,7 +67,7 @@ export class Game {
       ball.y = Math.max(0, Math.min(gameHeight - ballSize, ball.y));
     }
 
-    // Left paddle
+    // Left paddle collision
     if (
       ball.x <= this.PADDLE_WIDTH &&
       ball.y + ballSize >= paddles.left.y &&
@@ -73,7 +80,7 @@ export class Game {
       ball.dy = (hitPos - 0.5) * this.BALL_SPEED * 1.5;
     }
 
-    // Right paddle
+    // Right paddle collision
     if (
       ball.x + ballSize >= gameWidth - this.PADDLE_WIDTH &&
       ball.y + ballSize >= paddles.right.y &&
@@ -132,6 +139,4 @@ export class Game {
     newState.gameStarted = true;
     Object.assign(gameState, newState);
   }
-
-  private static readonly BALL_SIZE = 10;
 }

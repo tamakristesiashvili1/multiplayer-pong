@@ -5,9 +5,123 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #0a0000; /* very dark red-black */
+  color: #ffaaaa;
+  text-shadow:
+    0 0 3px #ff0000cc,
+    0 0 6px #cc0000bb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 0;
+  color: #ff3333;
+  text-shadow:
+    0 0 5px #ff0000,
+    0 0 10px #cc0000,
+    0 0 15px #990000;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+#controls {
+  margin-bottom: 20px;
+}
+
+button {
+  background: #330000;
+  color: #ffaaaa;
+  border: 2px solid #ff3333;
+  padding: 12px 24px;
+  margin: 0 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 3px #ff0000aa;
+}
+
+button:hover {
+  background: #550000;
+  border-color: #ff5555;
+  box-shadow: 
+    0 0 10px #ff0000aa,
+    0 0 20px #ff000055;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+input {
+  background: #1a0000;
+  color: #ffaaaa;
+  border: 2px solid #ff3333;
+  padding: 10px;
+  font-size: 16px;
+  width: 120px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  text-shadow: 0 0 3px #ff0000aa;
+}
+
+input:focus {
+  outline: none;
+  border-color: #ff5555;
+  box-shadow: 0 0 10px #ff000055;
+}
+
+input::placeholder {
+  color: #cc6666;
+}
+
+#roomInfo {
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 18px;
+  color: #ff6666;
+  text-shadow:
+    0 0 3px #ff0000aa,
+    0 0 6px #cc000077;
+}
+
+#gameCanvas {
+  background: #000000;
+  border: 3px solid #ff3333;
+  border-radius: 15px;
+  display: block;
+  margin: 0 auto;
+  box-shadow: 
+    0 0 20px #ff0000aa,
+    0 0 40px #ff000044,
+    inset 0 0 20px #33000044;
+}
+
+#keyboardHelp {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #cc8888;
+  text-shadow: 0 0 2px #ff000066;
+  text-align: center;
+  background: #1a0000;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #ff333366;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+  color: #ff3333;
+  background-color: #110000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-shadow: 0 0 3px #ff0000aa;
 }
