@@ -14,61 +14,6 @@ interface GameBoardProps {
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, socket }) => {
   const { gameWidth, gameHeight, ball, paddles, paddleWidth, paddleHeight, ballSize } = gameState;
 
-  useEffect(() => {
-    if (!socket || !playerSide) {
-      console.log('Socket or playerSide not available:', { socket: !!socket, playerSide });
-      return;
-    }
-
-    console.log('Setting up keyboard listeners for player:', playerSide);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat) return;
-      if (typeof event.key !== 'string') return;
-
-      const key = event.key.toLowerCase();
-      console.log('Key pressed:', key);
-
-      // List of keys that control paddle movement
-      if (key === 'w' || key === 'arrowup') {
-        event.preventDefault();
-        console.log('Sending UP command to server');
-        socket.emit('playerInput', { direction: 'up' });
-      } else if (key === 's' || key === 'arrowdown') {
-        event.preventDefault();
-        console.log('Sending DOWN command to server');
-        socket.emit('playerInput', { direction: 'down' });
-      } else if (key === 'r' && gameState.gameOver) {
-        console.log('Sending restart command to server');
-        socket.emit('restartGame');
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (typeof event.key !== 'string') return;
-
-      const key = event.key.toLowerCase();
-
-      if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown') {
-        event.preventDefault();
-        console.log('Key released:', key, 'Sending stop command');
-        // Enable this if your server handles stop events
-        socket.emit('playerStop');
-      }
-    };
-
-    // Add event listeners
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    // Cleanup function
-    return () => {
-      console.log('Cleaning up keyboard listeners');
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [socket, playerSide, gameState.gameOver]);
-
   // Debug: Log when gameState changes
   useEffect(() => {
     console.log('GameState updated:', {
@@ -116,7 +61,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState, playerSide, soc
           overflow: 'hidden',
           userSelect: 'none',
         }}
-        tabIndex={0} // Make div focusable for keyboard events
+        tabIndex={0} // Keep this for potential focus needs
         onFocus={() => console.log('Game board focused')}
         onBlur={() => console.log('Game board lost focus')}
       >

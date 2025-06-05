@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { GameBoard } from './components/GameBoard';
 import { GameState, PlayerInput } from './types/game.types';
@@ -11,7 +11,9 @@ function App() {
   const [roomId, setRoomId] = useState<string>('');
   const [currentRoomId, setCurrentRoomId] = useState<string>('');
   const [gameStatus, setGameStatus] = useState<string>('Waiting to connect...');
-  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
+  
+  // Use useRef instead of useState for keysPressed to avoid stale closures
+  const keysPressed = useRef<Set<string>>(new Set());
 
   // Handle socket events
   useEffect(() => {
@@ -30,7 +32,7 @@ function App() {
     
     const onGameStarted = () => {
       console.log('Game started!');
-      setGameStatus('Game started! Use W/S or Arrow Keys to move your paddle.');
+      setGameStatus('Game started! Use WASD or Arrow Keys to move your paddle.');
     };
     
     const onGameEnded = (winner: 'left' | 'right') => {
@@ -93,40 +95,47 @@ function App() {
   // Keyboard event handlers for paddle movement and restart
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent default behavior for game keys
+      if (['w', 'a', 's', 'd', 'W', 'A', 'S', 'D', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'r', 'R'].includes(event.key)) {
+        event.preventDefault();
+      }
+
       const key = event.key.toLowerCase();
       
       console.log(`Key pressed: ${key}, Player side: ${playerSide}`);
 
       // Prevent repeated calls on holding key
-      if (keysPressed.has(key)) return;
-      setKeysPressed(prev => new Set(prev).add(key));
+      if (keysPressed.current.has(key)) {
+        console.log(`Key ${key} already pressed, ignoring repeat`);
+        return;
+      }
+      
+      keysPressed.current.add(key);
 
-      // Left player controls: W/S
-      if (playerSide === 'left') {
-        if (key === 'w') {
-          console.log('Left player moving up');
-          sendPlayerInput('up');
-          return;
-        }
-        if (key === 's') {
-          console.log('Left player moving down');
-          sendPlayerInput('down');
-          return;
-        }
+      // Movement controls for both players
+      // W/S or ArrowUp/ArrowDown for vertical movement
+      if (key === 'w' || key === 'arrowup') {
+        console.log(`${playerSide} player moving up`);
+        sendPlayerInput('up');
+        return;
+      }
+      
+      if (key === 's' || key === 'arrowdown') {
+        console.log(`${playerSide} player moving down`);
+        sendPlayerInput('down');
+        return;
       }
 
-      // Right player controls: ArrowUp/ArrowDown
-      if (playerSide === 'right') {
-        if (key === 'arrowup') {
-          console.log('Right player moving up');
-          sendPlayerInput('up');
-          return;
-        }
-        if (key === 'arrowdown') {
-          console.log('Right player moving down');
-          sendPlayerInput('down');
-          return;
-        }
+      // Optional: A/D or ArrowLeft/ArrowRight could be used for special moves
+      // For now, we'll just log them but not use them for movement
+      if (key === 'a' || key === 'arrowleft') {
+        console.log(`${playerSide} player pressed left (not used for movement)`);
+        return;
+      }
+      
+      if (key === 'd' || key === 'arrowright') {
+        console.log(`${playerSide} player pressed right (not used for movement)`);
+        return;
       }
 
       // Restart game on 'r' if game over
@@ -139,35 +148,37 @@ function App() {
     const handleKeyUp = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
-      setKeysPressed(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(key);
-        return newSet;
-      });
+      console.log(`Key released: ${key}, Player side: ${playerSide}`);
 
-      // Left player stops moving when W or S released
-      if (playerSide === 'left' && (key === 'w' || key === 's')) {
-        console.log('Left player stopping');
-        sendPlayerInput('stop');
+      // Remove from pressed keys
+      keysPressed.current.delete(key);
+
+      // Only send stop if game is active
+      if (!gameState?.gameStarted || gameState?.gameOver) {
         return;
       }
 
-      // Right player stops moving when arrow keys released
-      if (playerSide === 'right' && (key === 'arrowup' || key === 'arrowdown')) {
-        console.log('Right player stopping');
+      // Send stop when any movement key is released
+      if (['w', 's', 'arrowup', 'arrowdown'].includes(key)) {
+        console.log(`${playerSide} player stopping`);
         sendPlayerInput('stop');
       }
     };
 
-    // Add event listeners to document to ensure they always work
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
+    // Add event listeners to window to ensure they always work
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [keysPressed, playerSide, sendPlayerInput, gameState, socket]);
+  }, [playerSide, sendPlayerInput, gameState, socket]);
+
+  // Clear keys when game ends or player changes
+  useEffect(() => {
+    keysPressed.current.clear();
+  }, [gameState?.gameOver, playerSide]);
 
   // Create a new room
   const createRoom = () => {
@@ -197,7 +208,8 @@ function App() {
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
           Socket: {socket ? 'Connected' : 'Disconnected'} | 
           Player: {playerSide || 'None'} | 
-          Game Started: {gameState?.gameStarted ? 'Yes' : 'No'}
+          Game Started: {gameState?.gameStarted ? 'Yes' : 'No'} |
+          Keys Pressed: {Array.from(keysPressed.current).join(', ') || 'None'}
         </div>
 
         {!gameState && (
@@ -241,7 +253,7 @@ function App() {
             <GameBoard gameState={gameState} playerSide={playerSide} socket={socket} />
             <div className="controls-info">
               <p>
-                {playerSide === 'left' ? 'Use W/S keys to move' : 'Use Arrow Keys to move'}
+                Use WASD or Arrow Keys to move your paddle
                 {gameState.gameOver && ' | Press R to restart'}
               </p>
             </div>
